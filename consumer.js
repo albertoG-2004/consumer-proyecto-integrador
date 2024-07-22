@@ -6,8 +6,8 @@ dotenv.config();
 
 let token = '';
 
-async function consumeQueue(queueConfig) {
-    const { url, exchange, queueName, apiEndpoint, isTokenQueue } = queueConfig;
+async function consumeQueue(queueConfig, handleMessage) {
+    const { url, exchange, queueName } = queueConfig;
 
     try {
         const conn = await amqp.connect(url);
@@ -22,30 +22,8 @@ async function consumeQueue(queueConfig) {
         channel.consume(queue.queue, async (mensaje) => {
             if (mensaje !== null) {
                 const messageContent = mensaje.content.toString();
-                // console.log(`Message received from ${queueName}: ${messageContent}`);
                 const data = JSON.parse(messageContent);
-
-                if (isTokenQueue) {
-                    if (data) {
-                        token = data;
-                        console.log("Token updated");
-                    } else {
-                        console.log("No token found in message");
-                    }
-                } else {
-                    try {
-                        const config = {
-                            headers: {
-                                Authorization: token,
-                            }
-                        };
-
-                        const response = await axios.post(apiEndpoint, data, config);
-                        console.log(`Response from API (${queueName}):`, response.data);
-                    } catch (error) {
-                        console.log(`Error sending to API (${queueName}):`, error);
-                    }
-                }
+                await handleMessage(data);
             }
         }, { noAck: true });
     } catch (error) {
@@ -53,27 +31,51 @@ async function consumeQueue(queueConfig) {
     }
 }
 
-const queueConfigs = [
-    {
-        url: process.env.URL,
-        exchange: process.env.EXCHANGE_B,
-        queueName: process.env.QUEUE_B,
-        apiEndpoint: process.env.ENDPOINT_B,
-        isTokenQueue: false
-    },
-    {
-        url: process.env.URL,
-        exchange: process.env.EXCHANGE_M,
-        queueName: process.env.QUEUE_M,
-        apiEndpoint: process.env.ENDPOINT_M,
-        isTokenQueue: false
-    },
-    {
-        url: process.env.URL,
-        exchange: process.env.EXCHANGE_T,
-        queueName: process.env.QUEUE_T,
-        isTokenQueue: true
-    }
-];
+async function sendMessageToAPI(endpoint, data) {
+    try {
+        const config = {
+            headers: {
+                Authorization: token,
+            }
+        };
 
-queueConfigs.forEach(config => consumeQueue(config));
+        const response = await axios.post(endpoint, data, config);
+        console.log(`Response from API (${endpoint}):`, response.data);
+    } catch (error) {
+        console.log(`Error sending to API (${endpoint}):`, error);
+    }
+}
+
+const mqttQueueConfig = {
+    url: process.env.URL,
+    exchange: process.env.EXCHANGE,
+    queueName: process.env.QUEUE,
+};
+
+const tokenQueueConfig = {
+    url: process.env.URL,
+    exchange: process.env.EXCHANGE_T,
+    queueName: process.env.QUEUE_T,
+};
+
+const handleMqttMessage = async (data) => {
+    if (data.color && data.classification) {
+        await sendMessageToAPI(process.env.ENDPOINT_B, data);
+    } else if (data.box && data.temperature && data.humidity && data.weight) {
+        await sendMessageToAPI(process.env.ENDPOINT_M, data);
+    } else {
+        console.log("Message does not match any routing criteria:", data);
+    }
+};
+
+const handleTokenMessage = async (data) => {
+    if (data) {
+        token = data;
+        console.log("Token updated");
+    } else {
+        console.log("No token found in message");
+    }
+};
+
+consumeQueue(mqttQueueConfig, handleMqttMessage);
+consumeQueue(tokenQueueConfig, handleTokenMessage);
