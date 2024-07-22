@@ -59,7 +59,7 @@ const tokenQueueConfig = {
 };
 
 const handleMqttMessage = async (data) => {
-    if (data.color && data.classification) {
+    if (data.color) {
         await sendMessageToAPI(process.env.ENDPOINT_B, data);
     } else if (data.box && data.temperature && data.humidity && data.weight) {
         await sendMessageToAPI(process.env.ENDPOINT_M, data);
