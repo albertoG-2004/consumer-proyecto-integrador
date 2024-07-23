@@ -71,11 +71,13 @@ const handleMqttMessage = async (data) => {
 const handleTokenMessage = async (data) => {
     if (data) {
         token = data;
-        console.log("Token updated");
+        console.log("Token updated:", token);
     } else {
         console.log("No token found in message");
     }
 };
 
-consumeQueue(mqttQueueConfig, handleMqttMessage);
-consumeQueue(tokenQueueConfig, handleTokenMessage);
+(async () => {
+    await consumeQueue(mqttQueueConfig, handleMqttMessage);
+    await consumeQueue(tokenQueueConfig, handleTokenMessage);
+})();
