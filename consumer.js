@@ -71,7 +71,7 @@ const handleMqttMessage = async (data) => {
 const handleTokenMessage = async (data) => {
     if (data) {
         token = data;
-        console.log("Token updated:", token);
+        console.log("Token updated");
     } else {
         console.log("No token found in message");
     }
