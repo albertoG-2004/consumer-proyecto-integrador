@@ -60,9 +60,30 @@ const tokenQueueConfig = {
 
 const handleMqttMessage = async (data) => {
     if (data.color) {
-        await sendMessageToAPI(process.env.ENDPOINT_B, data);
-    } else if (data.box && data.temperature && data.humidity && data.weight) {
-        await sendMessageToAPI(process.env.ENDPOINT_M, data);
+        if(data.color == "NO DEFINIDO") {
+            console.log("API no consumida");
+        }else{
+            await sendMessageToAPI(process.env.ENDPOINT_B, data);
+        }
+    } else if (data.tempYellow && data.humidityYellow && data.tempGreen && data.humidityGreen && data.peso) {
+        const dataYellow = JSON.stringify({
+            "box": "Maduros",
+            "temperature": data.tempYellow,
+            "humidity": data.humidityYellow,
+            "weight": 0
+        });
+
+        const dataGreen = JSON.stringify({
+            "box": "Verdes",
+            "temperature": data.tempGreen,
+            "humidity": data.humidityGreen,
+            "weight": data.peso
+        });
+        
+        const response = await sendMessageToAPI(process.env.ENDPOINT_M, dataYellow);
+        if(response){
+            await sendMessageToAPI(process.env.ENDPOINT_M, dataGreen);
+        }
     } else {
         console.log("Message does not match any routing criteria:", data);
     }
