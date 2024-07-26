@@ -41,8 +41,10 @@ async function sendMessageToAPI(endpoint, data) {
 
         const response = await axios.post(endpoint, data, config);
         console.log(`Response from API (${endpoint}):`, response.data);
+        return response.data;  // Asegúrate de devolver la respuesta
     } catch (error) {
         console.log(`Error sending to API (${endpoint}):`, error);
+        return null;  // Devuelve null en caso de error
     }
 }
 
@@ -62,7 +64,7 @@ const handleMqttMessage = async (data) => {
     if (data.color) {
         if(data.color == "NO DEFINIDO") {
             console.log("API no consumida");
-        }else{
+        } else {
             await sendMessageToAPI(process.env.ENDPOINT_B, data);
         }
     } else if (data.tempYellow && data.humidityYellow && data.tempGreen && data.humidityGreen && data.peso) {
@@ -81,7 +83,7 @@ const handleMqttMessage = async (data) => {
         });
         
         const response = await sendMessageToAPI(process.env.ENDPOINT_M, dataYellow);
-        if(response){
+        if (response) {
             await sendMessageToAPI(process.env.ENDPOINT_M, dataGreen);
         }
     } else {
@@ -97,6 +99,11 @@ const handleTokenMessage = async (data) => {
         console.log("No token found in message");
     }
 };
+
+(async () => {
+    await consumeQueue(mqttQueueConfig, handleMqttMessage);
+    await consumeQueue(tokenQueueConfig, handleTokenMessage);
+})();
 
 (async () => {
     await consumeQueue(mqttQueueConfig, handleMqttMessage);
