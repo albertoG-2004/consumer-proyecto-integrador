@@ -13,7 +13,7 @@ async function consumeQueue(queueConfig, handleMessage) {
         const conn = await amqp.connect(url);
         const channel = await conn.createChannel();
 
-        await channel.assertExchange(exchange, 'direct', { durable: true });
+        await channel.assertExchange(exchange, 'topic', { durable: true });
         const queue = await channel.assertQueue(queueName, { exclusive: false });
         await channel.bindQueue(queue.queue, exchange, '');
 
