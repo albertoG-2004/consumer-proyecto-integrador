@@ -104,8 +104,3 @@ const handleTokenMessage = async (data) => {
     await consumeQueue(mqttQueueConfig, handleMqttMessage);
     await consumeQueue(tokenQueueConfig, handleTokenMessage);
 })();
-
-(async () => {
-    await consumeQueue(mqttQueueConfig, handleMqttMessage);
-    await consumeQueue(tokenQueueConfig, handleTokenMessage);
-})();
