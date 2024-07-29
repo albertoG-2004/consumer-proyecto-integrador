@@ -68,18 +68,24 @@ const handleMqttMessage = async (data) => {
             await sendMessageToAPI(process.env.ENDPOINT_B, data);
         }
     } else if (data.tempYellow && data.humidityYellow && data.tempGreen && data.humidityGreen && data.peso) {
+        const temperatureY = Number(data.tempYellow);
+        const temperatureG = Number(data.tempGreen);
+        const humidityY = Number(data.humidityYellow);
+        const humidityG = Number(data.humidityGreen);
+        const peso = Number(data.peso);
+
         const dataYellow = JSON.stringify({
             "box": "Maduros",
-            "temperature": data.tempYellow,
-            "humidity": data.humidityYellow,
+            "temperature": temperatureY,
+            "humidity": humidityY,
             "weight": 0
         });
 
         const dataGreen = JSON.stringify({
             "box": "Verdes",
-            "temperature": data.tempGreen,
-            "humidity": data.humidityGreen,
-            "weight": data.peso
+            "temperature": temperatureG,
+            "humidity": humidityG,
+            "weight": peso
         });
         
         const response = await sendMessageToAPI(process.env.ENDPOINT_M, dataYellow);
