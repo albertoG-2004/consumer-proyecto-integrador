@@ -31,20 +31,21 @@ async function consumeQueue(queueConfig, handleMessage) {
     }
 }
 
-async function sendMessageToAPI(endpoint, data) {
+async function sendMessageToAPI(endpoint, body) {
     try {
         const config = {
             headers: {
-                Authorization: token,
+                'Authorization': token,
+                'Content-Type': 'application/json'
             }
         };
-
-        const response = await axios.post(endpoint, data, config);
-        console.log(`Response from API (${endpoint}):`, response.data);
-        return response.data;  // Asegúrate de devolver la respuesta
+        console.log(body);
+        const response = await axios.post(endpoint, body, config);
+        console.log(`Response from API (${endpoint}):`, response.data.data);
+        return response.data;
     } catch (error) {
         console.log(`Error sending to API (${endpoint}):`, error);
-        return null;  // Devuelve null en caso de error
+        return null;
     }
 }
 
@@ -68,29 +69,31 @@ const handleMqttMessage = async (data) => {
             await sendMessageToAPI(process.env.ENDPOINT_B, data);
         }
     } else if (data.tempYellow && data.humidityYellow && data.tempGreen && data.humidityGreen && data.peso) {
-        const temperatureY = Number(data.tempYellow);
-        const temperatureG = Number(data.tempGreen);
-        const humidityY = Number(data.humidityYellow);
-        const humidityG = Number(data.humidityGreen);
-        const peso = Number(data.peso);
+        console.log(data);
+        const temperatureY = Number.parseFloat(data.tempYellow);
+        const temperatureG = Number.parseFloat(data.tempGreen);
+        const humidityY = Number.parseFloat(data.humidityYellow);
+        const humidityG = Number.parseFloat(data.humidityGreen);
+        const peso = Number.parseFloat(data.peso);
 
-        const dataYellow = JSON.stringify({
+        const dataYellow = {
             "box": "Maduros",
             "temperature": temperatureY,
             "humidity": humidityY,
             "weight": 0
-        });
+        };
 
-        const dataGreen = JSON.stringify({
+        const dataGreen = {
             "box": "Verdes",
             "temperature": temperatureG,
             "humidity": humidityG,
             "weight": peso
-        });
-        
+        };
         const response = await sendMessageToAPI(process.env.ENDPOINT_M, dataYellow);
-        if (response) {
+        if (response != null) {
             await sendMessageToAPI(process.env.ENDPOINT_M, dataGreen);
+        } else {
+            console.log("Algo salio mal");
         }
     } else {
         console.log("Message does not match any routing criteria:", data);
